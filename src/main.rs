@@ -1,30 +1,10 @@
 use serde_json::{ Value, json} ;
+use crate::model::condition::Condition;
+use crate::model::rule::Rule;
 
-#[derive(Debug)]
-pub struct Condition {
-    predicate: String,
-    operator: String,
-    fact: String
-}
-
-#[derive(Debug)]
-pub struct Rule { 
-    priority: u32,
-    conditions: Vec<Condition>,
-    action: fn(Value) -> bool
-}
+pub mod model;
 
 fn main() {
-
-    let mut conditions: Vec<Condition> = Vec::new();
-
-    let condition = Condition {
-        predicate: String::from("Predicate"), 
-        operator: String::from("operator"), 
-        fact: String::from("fact")
-    };
-
-    conditions.push(condition);
 
     let john = json!({
         "name": "John Doe",
@@ -35,20 +15,5 @@ fn main() {
         ]
     });
 
-    let first_rule = Rule {
-        priority: 1,
-        conditions: conditions,
-        action: |value: Value| -> bool {
-            let mut is_true = false;
 
-            if value["name"] == "John Doe"{
-                is_true = true;
-            }
-
-            return is_true;
-        }
-    };
-
-    let is_activated = first_rule.action;
-    println!("{}", is_activated(john));
 }
