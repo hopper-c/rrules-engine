@@ -164,7 +164,10 @@ impl ConditionOperation for ConditionOrGroup {
                         // Probably better to do this in a thread. Will update later
                         for condition in conditions {
                             is_true = match condition {
-                                ConditionOrGroup::Group { conditions, logical } => { self.check(&json_obj) },
+                                ConditionOrGroup::Group { conditions, logical } => { 
+                                    dbg!("Found a group: {:?}", condition);
+                                    condition.check(&json_obj) 
+                                },
                                 ConditionOrGroup::Condition { variable, operator, value } => { check_condition(json_obj, variable, operator, value) }
                             };
 
@@ -179,7 +182,10 @@ impl ConditionOperation for ConditionOrGroup {
 
                         for condition in conditions {
                             is_true = match condition {
-                                ConditionOrGroup::Group { conditions, logical } => { self.check(&json_obj) },
+                                ConditionOrGroup::Group { conditions, logical } => { 
+                                    dbg!("Found a group: {:?}", condition);
+                                    condition.check(&json_obj) 
+                                },
                                 ConditionOrGroup::Condition { variable, operator, value } => { check_condition(json_obj, variable, operator, value) }
                             };
 
@@ -203,7 +209,15 @@ fn main() {
         { 
             "data": {
                 "deeper": 32.5,
-                "otherDeeper": 55
+                "otherDeeper": 55,
+                "group1": {
+                    "condition1": 30,
+                    "condition2": 35
+                },
+                "group2": {
+                    "condition3": 30,
+                    "condition4": 32
+                }
             }
         }
     "#;
@@ -220,6 +234,24 @@ fn main() {
     let group = ConditionOrGroup::Group { conditions: conditions, logical: LogicalOperator::OR };
     let is_group_true = group.check(&json_value);
 
+    let condition1 = ConditionOrGroup::Condition { variable: "data.group1.condition1".to_owned(), operator: Operator::EqualTo, value: "30".to_owned() };
+    let condition2 = ConditionOrGroup::Condition { variable: "data.group1.condition2".to_owned(), operator: Operator::GreaterThan, value: "30".to_owned() };
+    let condition3 = ConditionOrGroup::Condition { variable: "data.group2.condition3".to_owned(), operator: Operator::LessThanEqualTo, value: "30".to_owned() };
+    let condition4 = ConditionOrGroup::Condition { variable: "data.group2.condition4".to_owned(), operator: Operator::LessThan, value: "30".to_owned() };
+
+    let group1_conditions = vec![condition1, condition2];
+    let group2_conditions = vec![condition3, condition4];
+
+    let group1 = ConditionOrGroup::Group { conditions: group1_conditions, logical: LogicalOperator::OR };
+    let group2 = ConditionOrGroup::Group { conditions: group2_conditions, logical: LogicalOperator::AND };
+
+    let groups = vec![group1, group2];
+
+    let group_of_groups = ConditionOrGroup::Group { conditions: groups, logical: LogicalOperator::AND };
+
+    let are_groups_true = group_of_groups.check(&json_value);
+
     dbg!("{:?}", is_condition_true);
     dbg!("{:?}", is_group_true);
+    dbg!("{:?}", are_groups_true);
 }
