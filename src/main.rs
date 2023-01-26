@@ -23,7 +23,7 @@ enum Operator {
     EqualTo
 }
 
-// This only works with integers, but I want to pass in the String straight
+// This only works with numbers, but I want to pass in the String straight
 fn less_than(variable: &Value, value: &String) -> bool {
 
     let int_variable: f64 = variable.as_f64().expect("Variable was not a valid number.");
@@ -101,11 +101,11 @@ fn execute_operator(variable: &Value, operator: &Operator, value: &String) -> bo
 #[derive(Debug)]
 enum ConditionOrGroup {
     Condition { variable: String, operator: Operator, value: String },
-    Group { things: Vec<ConditionOrGroup>, logical: LogicalOperator }
+    Group { conditions: Vec<ConditionOrGroup>, logical: LogicalOperator }
 }
 
 trait ConditionOperation {
-    fn check(&self, json_obj: serde_json::Value) -> bool;
+    fn check(&self, json_obj: &serde_json::Value) -> bool;
 }
 
 fn handle_unwrap(obj: Option<&Value>) -> &Value {
@@ -124,16 +124,16 @@ fn get_recursively(mut path: Vec<&str>, json: &serde_json::Value) -> serde_json:
     let obj = handle_unwrap(json.get(first_path));
 
     if let Value::Object(other_obj) = obj {
-        println!("Attempting to recurse on obj {:?}", obj);
+        dbg!("Attempting to recurse on obj {:?}", obj);
         get_recursively(path, obj)
     }
     else {
-        println!("We found the final value {:?}", obj);
+        dbg!("We found the final value {:?}", obj);
         obj.to_owned()
     }
 }
 
-fn check_condition(json_obj: serde_json::Value, variable: &String, operator: &Operator, value: &String) -> bool {
+fn check_condition(json_obj: &serde_json::Value, variable: &String, operator: &Operator, value: &String) -> bool {
 
     //Parse out the variable, starting simple with just split on '.'
     let split: Vec<&str> = variable.split(".").collect();
@@ -141,27 +141,57 @@ fn check_condition(json_obj: serde_json::Value, variable: &String, operator: &Op
     //Has to be a faster/better way, but for now, loop
     let obj_value = get_recursively(split, &json_obj);
 
-    println!("{:?}", obj_value);
+    dbg!("{:?}", &obj_value);
 
     let is_fire= execute_operator(&obj_value, operator, value);
 
-    println!("Did our rule fire? {}", is_fire);
+    dbg!("Did our rule fire? {}", is_fire);
     
-    true
+    is_fire
 }
 
 impl ConditionOperation for ConditionOrGroup {
-    fn check(&self, json_obj: serde_json::Value) -> bool {
+    fn check(&self, json_obj: &serde_json::Value) -> bool {
         match(self) {
             ConditionOrGroup::Condition { variable, operator, value } => {
-                // Need to get the value of the variable from the object
-                // Get the operator function
-                // Check the conditions
                 check_condition(json_obj, variable, operator, value)
             },
-            ConditionOrGroup::Group { things, logical } => {
-                // Do the above on the vec
-                true
+            ConditionOrGroup::Group { conditions, logical } => {
+                let did_fire = match logical {
+                    LogicalOperator::AND => {
+                        let mut is_true = true;
+
+                        // Probably better to do this in a thread. Will update later
+                        for condition in conditions {
+                            is_true = match condition {
+                                ConditionOrGroup::Group { conditions, logical } => { self.check(&json_obj) },
+                                ConditionOrGroup::Condition { variable, operator, value } => { check_condition(json_obj, variable, operator, value) }
+                            };
+
+                            // If we ever find a false on the group of conditions above, immediately break
+                            if !is_true { break; }
+                        };
+
+                        is_true
+                    },
+                    LogicalOperator::OR => {
+                        let mut is_true = false;
+
+                        for condition in conditions {
+                            is_true = match condition {
+                                ConditionOrGroup::Group { conditions, logical } => { self.check(&json_obj) },
+                                ConditionOrGroup::Condition { variable, operator, value } => { check_condition(json_obj, variable, operator, value) }
+                            };
+
+                            // If we ever find a true on the group of conditions above, immediately break
+                            if is_true { break; }
+                        };
+
+                        is_true
+                    }
+                };
+
+                did_fire
             }
         }
     }
@@ -172,21 +202,24 @@ fn main() {
     let json = r#"
         { 
             "data": {
-                "deeper": 32.5
+                "deeper": 32.5,
+                "otherDeeper": 55
             }
         }
     "#;
 
     let json_value = serde_json::from_str(json).expect("Malformed json.");
     
-    let condition = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "35".to_owned() };
-    let is_condition = condition.check(json_value);
+    let condition = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "30".to_owned() };
+    let is_condition_true = condition.check(&json_value);
 
-    let other_condition = ConditionOrGroup::Condition { variable: "object.thing".to_owned(), operator: Operator::EqualTo, value: "literal value".to_owned() };
+    let other_condition = ConditionOrGroup::Condition { variable: "data.otherDeeper".to_owned(), operator: Operator::EqualTo, value: "55".to_owned() };
 
     let conditions = vec![condition, other_condition];
 
-    let group = ConditionOrGroup::Group { things: conditions, logical: LogicalOperator::AND };
+    let group = ConditionOrGroup::Group { conditions: conditions, logical: LogicalOperator::OR };
+    let is_group_true = group.check(&json_value);
 
-    println!("{:?}", is_condition);
+    dbg!("{:?}", is_condition_true);
+    dbg!("{:?}", is_group_true);
 }
