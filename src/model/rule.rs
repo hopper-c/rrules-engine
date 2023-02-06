@@ -1,26 +1,27 @@
 use serde::{ Deserialize, Serialize };
 use serde_json::{ Value, json };
-use crate::model::condition::ConditionGroup;
+use crate::model::condition::ConditionOrGroup;
 
 #[derive(Deserialize, Serialize, Debug)]
-enum Action {
+pub enum Action {
     Add(i64, i64)
 }
 
 #[derive(Debug)]
 pub struct Rule { 
-    name: &'static str,
-    priority: u16,
-    conditions: Vec<ConditionGroup>,
-    action: Action
+    pub name: &'static str,
+    pub priority: u16,
+    pub conditions: Vec<ConditionOrGroup>,
+    //Temporary
+    pub action: &'static str
 }
 
-impl Rule {
-    fn execute(&self, fact: Value) -> Value {
-        match self.action {
-            Action::Add(a, b) => {
-                json!(null)
-            }
-        }
-    }
-}
+// impl Rule {
+//     fn execute(&self, fact: Value) -> Value {
+//         match self.action {
+//             Action::Add(a, b) => {
+//                 json!(null)
+//             }
+//         }
+//     }
+// }
