@@ -7,7 +7,7 @@ pub enum Action {
     Add(i64, i64)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Rule { 
     pub name: &'static str,
     pub priority: u16,
@@ -16,12 +16,13 @@ pub struct Rule {
     pub action: &'static str
 }
 
-// impl Rule {
-//     fn execute(&self, fact: Value) -> Value {
-//         match self.action {
-//             Action::Add(a, b) => {
-//                 json!(null)
-//             }
-//         }
-//     }
-// }
+pub trait RuleOperations {
+    fn execute(&self, data: String) -> bool;
+}
+
+impl RuleOperations for Rule {
+    fn execute(&self, data: String) -> bool {
+        dbg!(data);
+        true
+    }
+}

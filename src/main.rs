@@ -1,9 +1,10 @@
+use std::borrow::Borrow;
 use std::{vec};
 use model::condition::{ ConditionOrGroup, Operator, self };
 use serde_json;
 
 pub mod model;
-use model::engine::{Engine, EngineOperations};
+use model::engine::{Engine, EngineOperations, Algorithm};
 use model::rule::Rule;
 // use crate::model::condition::{ ConditionOrGroup, Operator, LogicalOperator };
 // use crate::model::rule::Rule;
@@ -27,22 +28,36 @@ fn main() {
                 }
             }
         }
-    "#;
+    "#.to_string();
     let condition = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "30".to_owned() };
     let conditions = vec![condition];
 
     let rule = Rule {
         name: "Testing",
         priority: 1,
-        conditions: conditions,
+        conditions: conditions.clone(),
         action: "Fake"
     };
 
-    let rules = vec![rule];
+    let rule2 = Rule {
+        name: "Testing",
+        priority: 1,
+        conditions: conditions.clone(),
+        action: "Fake"
+    };
+
+    let rule3 = Rule {
+        name: "Testing",
+        priority: 1,
+        conditions: conditions.clone(),
+        action: "Fake"
+    };
+
+    let rules = vec![rule, rule2, rule3];
 
     let engine = Engine {
         rules: rules,
-        algorithm: "default"
+        algorithm: Algorithm::Default
     };
 
     engine.run(json);

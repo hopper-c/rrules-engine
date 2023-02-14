@@ -1,13 +1,13 @@
 use float_cmp::{ approx_eq };
 use serde_json::{ Value };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum LogicalOperator {
     AND,
     OR
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Operator {
     LessThan,
     LessThanEqualTo,
@@ -16,7 +16,7 @@ pub enum Operator {
     EqualTo
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConditionOrGroup {
     Condition { variable: String, operator: Operator, value: String },
     Group { conditions: Vec<ConditionOrGroup>, logical: LogicalOperator }
