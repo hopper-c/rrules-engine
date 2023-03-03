@@ -1,4 +1,4 @@
-use std::{thread::{self, JoinHandle}, sync::{Arc, Mutex}, clone};
+use std::{thread::{self, JoinHandle}, sync::{Arc}};
 use crate::model::rule::{Rule, RuleOperations};
 
 #[derive(Debug)]
@@ -21,7 +21,6 @@ impl EngineOperations for Engine {
     fn run(self, data: String) -> bool {
 
         let clone_data = Arc::new(data);
-        let mut result: bool;
         let mut handles: Vec<JoinHandle<bool>> = Vec::new();
 
         // Very basic for loop just to get this to run the rules ingested
@@ -36,10 +35,9 @@ impl EngineOperations for Engine {
         }
 
         for handle in handles {
-            dbg!("Unwrapping");
-            handle.join().unwrap();
+            handle.join().expect("An error occurred when evaluating the rules.");
         }
-        dbg!("Engine ran.");
+        dbg!("Engine evaluated all rules.");
         true
     }
 

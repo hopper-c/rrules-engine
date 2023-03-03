@@ -111,17 +111,14 @@ fn handle_unwrap(obj: Option<&Value>) -> &Value {
 
 fn get_recursively(mut path: Vec<&str>, json: &serde_json::Value) -> serde_json::Value {
     // Get the top path and remove it from the vec
-    // Need an expect
     let first_path = path.remove(0);
 
     let obj = handle_unwrap(json.get(first_path));
 
-    if let Value::Object(other_obj) = obj {
-        dbg!("Attempting to recurse on obj {:?}", obj);
+    if let Value::Object(_other_obj) = obj {
         get_recursively(path, obj)
     }
     else {
-        dbg!("We found the final value {:?}", obj);
         obj.to_owned()
     }
 }
@@ -134,12 +131,8 @@ fn check_condition(json_obj: &serde_json::Value, variable: &String, operator: &O
     
     let obj_value = get_recursively(split, &json_obj);
 
-    dbg!("{:?}", &obj_value);
-
     let is_fire= execute_operator(&obj_value, operator, value);
 
-    dbg!("Did our rule fire? {}", is_fire);
-    
     is_fire
 }
 
@@ -194,4 +187,37 @@ impl ConditionOperation for ConditionOrGroup {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_recursively_success() {
+
+    let path = vec!["data", "test"];
+    let json = r#"
+        { 
+            "data": {
+                "test": 55
+            }
+        }
+    "#.to_string();
+    let json_value: Value = serde_json::from_str(&json).expect("Malformed json.");
+    let expected_json = r#"
+        { 
+            "test": 55
+        }
+    "#.to_string();
+    let expected: Value = serde_json::from_str(&expected_json).expect("Malformed json.");
+    let expected_result = expected.get("test").unwrap();
+
+
+    let result = get_recursively(path, &json_value);
+
+    assert_eq!(*expected_result, result);
+    }
+
+
 }

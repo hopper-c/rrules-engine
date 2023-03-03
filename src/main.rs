@@ -29,27 +29,44 @@ fn main() {
             }
         }
     "#.to_string();
-    let condition = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "30".to_owned() };
-    let conditions = vec![condition];
+    let condition_true = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "35".to_owned() };
+    let condition_true2 = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "36".to_owned() };
+    let condition_true3 = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "36".to_owned() };
+    let condition_true4 = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "36".to_owned() };
+    let condition_false = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "5".to_owned() };
+    let condition_false2 = ConditionOrGroup::Condition { variable: "data.deeper".to_owned(), operator: Operator::LessThan, value: "5".to_owned() };
+
+    let true_conditions = vec![condition_true, condition_true2];
+    let true_condition_group = ConditionOrGroup::Group { conditions: true_conditions, logical: condition::LogicalOperator::AND };
+
+    let semi_true_conditions = vec![condition_true3, condition_false];
+    let other_semi_true_conditions = vec![condition_true4, condition_false2];
+    let other_true_condition_group = ConditionOrGroup::Group { conditions: semi_true_conditions, logical: condition::LogicalOperator::OR };
+    let false_condition_group = ConditionOrGroup::Group { conditions: other_semi_true_conditions, logical: condition::LogicalOperator::AND };
+
+    let true_condition1_vec = vec![true_condition_group];
+    let true_condition2_vec = vec![other_true_condition_group];
+    let false_condition_vec = vec![false_condition_group];
+
 
     let rule = Rule {
-        name: "Testing",
+        name: "Testing1",
         priority: 1,
-        conditions: conditions.clone(),
+        conditions: true_condition1_vec,
         action: "Fake"
     };
 
     let rule2 = Rule {
-        name: "Testing",
+        name: "Testing2",
         priority: 1,
-        conditions: conditions.clone(),
+        conditions: true_condition2_vec,
         action: "Fake"
     };
 
     let rule3 = Rule {
-        name: "Testing",
+        name: "Testing3",
         priority: 1,
-        conditions: conditions.clone(),
+        conditions: false_condition_vec,
         action: "Fake"
     };
 
